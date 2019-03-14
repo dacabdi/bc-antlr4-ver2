@@ -8,11 +8,7 @@
     <property name="build" location="build"/>
     <property name="lib" location="lib"/>
     <property name="grammar" location="grammar/ArrayInit.g4"/>
-
-    <target name="init">
-        <tstamp/>
-        <mkdir dir="${build}"/>
-    </target>
+    <property name="antlrsource" value="https://www.antlr.org/download/antlr-4.7.2-complete.jar" />
 
     <path id="build.classpath">
         <fileset dir="${basedir}">
@@ -25,13 +21,25 @@
         <mapper>
             <chainedmapper>
                 <flattenmapper/>
-                <globmapper from="*.jar" to="lib/*.jar"/>
+                <globmapper from="*.jar" to="${lib}/*.jar"/>
             </chainedmapper>
         </mapper>
     </pathconvert>
 
-    <target name="antlr">
+
+    <target name="init">
+        <tstamp/>
+        <mkdir dir="${build}"/>
+    </target>
+
+    <target name="getantlr">
+        <mkdir dir="${lib}" />
+        <get dest="${lib}" src="${antlrsource}" />
+    </target>
+
+    <target name="antlr" depends="init,getantlr">
         <mkdir dir="${src}/antlr"/>
+        <echo message="classpath = ${manifest.classpath}" />
         <java classname="org.antlr.v4.Tool" classpath="${manifest.classpath}">
             <arg value="${grammar}"/>
             <arg line="-o ${src}/antlr"/>
@@ -57,7 +65,7 @@
     </target>
 
     <target name="run" depends="dist" description="run bc">
-
+        <java jar="bc.jar" fork="true"/>
     </target>
 
     <target name="clean" description="clean up">
