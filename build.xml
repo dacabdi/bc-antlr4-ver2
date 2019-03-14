@@ -1,0 +1,69 @@
+<project name="bc" default="dist" basedir=".">
+    <description>
+        simple example build file
+    </description>
+
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="build" location="build"/>
+    <property name="lib" location="lib"/>
+    <property name="grammar" location="grammar/ArrayInit.g4"/>
+
+    <target name="init">
+        <tstamp/>
+        <mkdir dir="${build}"/>
+    </target>
+
+    <path id="build.classpath">
+        <fileset dir="${basedir}">
+            <include name="lib/*.jar"/>
+        </fileset>
+    </path>
+    
+    <pathconvert property="manifest.classpath" pathsep=" ">
+        <path refid="build.classpath"/>
+        <mapper>
+            <chainedmapper>
+                <flattenmapper/>
+                <globmapper from="*.jar" to="lib/*.jar"/>
+            </chainedmapper>
+        </mapper>
+    </pathconvert>
+
+    <target name="antlr">
+        <mkdir dir="${src}/antlr"/>
+        <java classname="org.antlr.v4.Tool" classpath="${manifest.classpath}">
+            <arg value="${grammar}"/>
+            <arg line="-o ${src}/antlr"/>
+        </java>
+    </target>
+
+    <target name="compile" depends="init,antlr" description="compile the source">
+        <!-- compile the java code from ${src} into ${build} -->
+        <javac srcdir="${src}" destdir="${build}"/>
+        <javac srcdir="${src}/antlr" destdir="${build}"/>
+    </target>
+
+    <target name="dist" depends="compile" description="generate the distribution">
+        <!-- put everything in ${build} into the bc.jar -->
+        <jar jarfile="bc.jar" >
+            <fileset dir="${build}" />
+            <manifest>
+                <attribute name="Main-Class" value="App" />
+                <attribute name="Class-Path" value="${manifest.classpath}" />
+            </manifest>
+        </jar>
+        <antcall target="clean" />
+    </target>
+
+    <target name="run" depends="dist" description="run bc">
+
+    </target>
+
+    <target name="clean" description="clean up">
+        <!-- delete the ${build} directory trees -->
+        <delete dir="${build}"/>
+        <delete dir="${src}/antlr"/>
+    </target>
+
+</project>
