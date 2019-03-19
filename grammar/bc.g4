@@ -3,50 +3,47 @@ grammar bc;
 // basic version, no branching control, functions, etc
 
 program : <EOF>
-        | statement_feed_list
+        | (s=statement STATEMENT_DELIM+)*
+        | statement*
         ;
 
-statement_feed_list : statement_feed* EOF; 
 
-statement_feed : s=statement STATEMENT_DELIM+
-               ; //STATEMENT_DELIM+ //(?=[ \t\r\n;]*)
-            
-statement : 'quit'
+statement : QUIT
           | expr
           | STRING
-          | '{' statement_list '}'
-          | 'print' list
-          | 'if' '(' expr ')' statement ('else' statement)?
-          | 'while' '(' expr ')' statement
-          | 'for' '(' expr ';' expr ';' expr ')' statement
-          | 'break'
-          | 'continue'
-          | 'halt'
-          | 'return'
-          | 'return' ( '(' expr ')' | expr ) // extension ver does not require parenthesis
-          | 'define' NAME '(' names_list ')' '{' auto_list? statement_list '}'
-          | /* empty */
+          | BRACELEFT statement_list BRACERIGHT
+          | PRINT list
+          | IF LEFTPAR expr RIGHTPAR statement (ELSE statement)?
+          | WHILE LEFTPAR expr RIGHTPAR statement
+          | FOR LEFTPAR expr SEMICOLON expr SEMICOLON expr RIGHTPAR statement
+          | BREAK
+          | CONTINUE
+          | HALT
+          | RETURN
+          | RETURN ( LEFTPAR expr RIGHTPAR | expr ) // extension ver does not require parenthesis
+          | DEFINE NAME LEFTPAR names_list? RIGHTPAR BRACELEFT auto_list? statement_list BRACERIGHT
+          //| /* empty */
           ;
 
-names_list : curr=NAME (LISTSEPARATOR next=names_list)?
-           | /* empty */
-           ;
-
-auto_list : 'auto' names_list;
-
-statement_list : curr=statement (STATEMENT_DELIM next=statement_list)?
+statement_list : curr=statement (STATEMENT_DELIM+ next=statement_list)
+               | curr=statement
                | /* empty */
                ;
 
+names_list : curr=NAME (LISTSEPARATOR next=names_list)? 
+           ;
+
+auto_list : AUTO names_list
+          ;
+
 list : curr=list_item (LISTSEPARATOR next=list)?
-     | /* empty */
      ;
 
 list_item : item=expr
           | STRING
           ;
 
-expr : '(' expr ')'
+expr : LEFTPAR expr RIGHTPAR
      | INCDEC varid=NAME
      | varid=NAME op=INCDEC
      | op=NEGATE a=expr
@@ -62,17 +59,36 @@ expr : '(' expr ')'
      | number
      | varid=NAME
      // functions
-     | funct=FUNCT '(' arg=expr ')'
-     | funct=NAME '(' arg=expr ')'
-     | READ '(' ')'
+     | funct=FUNCT  arg=expr RIGHTPAR
+     | funct=NAME LEFTPAR arg=expr RIGHTPAR
+     | READ LEFTPAR RIGHTPAR
      ;
 
 number : INT
        | FLOAT
        ;
 
+
+IF : 'if';
+ELSE : 'else';
+LEFTPAR : '(';
+RIGHTPAR : ')';
+BRACELEFT : '{';
+BRACERIGHT : '}';
+PRINT : 'print';
+QUIT : 'quit';
+WHILE : 'while';
+FOR : 'for';
+SEMICOLON : ';';
+BREAK : 'break';
+CONTINUE : 'continue';
+HALT : 'halt';
+RETURN : 'return';
+DEFINE : 'define';
+AUTO : 'auto';
+
 LISTSEPARATOR   : ',';
-STATEMENT_DELIM : ('\n' | ';' | EOF);
+STATEMENT_DELIM : (';' | '\n' | EOF) -> skip;
 
 FUNCT   : (READ | SQRT | SINE | COSI | NLOG | EXPE);
 READ    : 'read';
@@ -82,8 +98,8 @@ COSI    : 'c';
 NLOG    : 'l';
 EXPE    : 'e';
 
-// Names begin with a letter followed by 
-// any number of letters, digits and underscores.
+// NAME begins with a letter followed by any number of letters, digits and underscores, all lowercase.
+
 NAME        : (([a-z]+[_a-z0-9]*('['[0-9]+']'))|([a-z]+[_a-z0-9]*));
 INT         : [0-9]+;
 FLOAT       : [0-9]*'.'[0-9]*;

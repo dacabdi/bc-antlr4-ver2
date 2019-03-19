@@ -1,3 +1,5 @@
+package bc;
+
 // import ANTLR's runtime libraries
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -17,7 +19,7 @@ public class App
 
         // create a parser that feeds off the tokens buffer
         bcParser parser = new bcParser(tokens);
-        ParseTree tree = parser.init(); // begin parsing at init rule
+        ParseTree tree = parser.program(); // begin parsing at init rule
         
         System.out.println(tree.toStringTree(parser)); // print LISP-style tree
     }

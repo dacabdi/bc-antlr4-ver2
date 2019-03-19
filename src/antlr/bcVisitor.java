@@ -1,4 +1,5 @@
 // Generated from /home/frogmedia/repos/bc-antlr4-ver2/grammar/bc.g4 by ANTLR 4.7.2
+package bc;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**
@@ -15,18 +16,6 @@ public interface bcVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitProgram(bcParser.ProgramContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link bcParser#statement_feed_list}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitStatement_feed_list(bcParser.Statement_feed_listContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link bcParser#statement_feed}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitStatement_feed(bcParser.Statement_feedContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link bcParser#statement}.
 	 * @param ctx the parse tree
