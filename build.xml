@@ -42,6 +42,7 @@
         <echo message="classpath = ${manifest.classpath}" />
         <java classname="org.antlr.v4.Tool" classpath="${manifest.classpath}">
             <arg value="${grammar}"/>
+            <arg line="-visitor"/>
             <arg line="-o ${src}/antlr"/>
         </java>
     </target>
