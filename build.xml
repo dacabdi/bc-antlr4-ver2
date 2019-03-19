@@ -7,7 +7,7 @@
     <property name="src" location="src"/>
     <property name="build" location="build"/>
     <property name="lib" location="lib"/>
-    <property name="grammar" location="grammar/ArrayInit.g4"/>
+    <property name="grammar" location="grammar/bc.g4"/>
     <property name="antlrsource" value="https://www.antlr.org/download/antlr-4.7.2-complete.jar" />
 
     <path id="build.classpath">

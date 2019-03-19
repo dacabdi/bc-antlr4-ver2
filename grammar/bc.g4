@@ -23,14 +23,14 @@ statement : 'quit'
           | 'continue'
           | 'halt'
           | 'return'
-          | 'return' ('(' expr ')' | expr) // extension ver does not require parenthesis
-          | 'define' NAME '(' names_list? ')' '{' auto_list? statement_list '}'
+          | 'return' ( '(' expr ')' | expr ) // extension ver does not require parenthesis
+          | 'define' NAME '(' names_list ')' '{' auto_list? statement_list '}'
           | /* empty */
           ;
 
 names_list : curr=NAME (LISTSEPARATOR next=names_list)?
-            | /* empty */
-            ;
+           | /* empty */
+           ;
 
 auto_list : 'auto' names_list;
 
@@ -62,8 +62,8 @@ expr : '(' expr ')'
      | number
      | varid=NAME
      // functions
-     | funct=(FUNCT) '(' arg=expr ')'
-     | funct=(NAME) '(' arg=expr ')'
+     | funct=FUNCT '(' arg=expr ')'
+     | funct=NAME '(' arg=expr ')'
      | READ '(' ')'
      ;
 
