@@ -16,6 +16,14 @@ statement : 'quit'
           | STRING
           | '{' statement_list '}'
           | 'print' list
+          | 'if' '(' expr ')' statement ('else' statement)?
+          | 'while' '(' expr ')' statement
+          | 'for' '(' expr ';' expr ';' expr ')' statement
+          | 'break'
+          | 'continue'
+          | 'halt'
+          | 'return'
+          | 'return' '('? expr ')'? // extension does not require parenthesis
           | /* empty */
           ;
 
@@ -34,21 +42,23 @@ list_item : item=expr
           ;
 
 expr : '(' expr ')'
-     | op=INCDEC varid=VAR
-     | varid=VAR op=INCDEC
+     | INCDEC varid=NAME
+     | varid=NAME op=INCDEC
      | op=NEGATE a=expr
      | <assoc=right>a=expr op=POW b=expr
      | a=expr op=MULTIPLICATIVE b=expr
      | a=expr op=ADDITIVE b=expr
-     | <assoc=right>varid=VAR op=PASSIGN b=expr
-     | <assoc=right>varid=VAR op=ASSIGNMENT b=expr
+     | <assoc=right>varid=NAME op=PASSIGN b=expr
+     | <assoc=right>varid=NAME op=ASSIGNMENT b=expr
      | a=expr op=RELATIONAL b=expr
      | op=NOT a=expr
      | a=expr op=AND b=expr
      | a=expr op=OR b=expr
      | number
-     | varid=VAR
-     | f=FUNCT '(' arg=expr ')'
+     | varid=NAME
+     // functions
+     | funct=(FUNCT) '(' arg=expr ')'
+     | funct=(NAME) '(' arg=expr ')'
      | READ '(' ')'
      ;
 
@@ -69,7 +79,7 @@ EXPE    : 'e';
 
 // Names begin with a letter followed by 
 // any number of letters, digits and underscores.
-VAR         : (([a-z]+[_a-z0-9]*('['[0-9]+']'))|([a-z]+[_a-z0-9]*));
+NAME        : (([a-z]+[_a-z0-9]*('['[0-9]+']'))|([a-z]+[_a-z0-9]*));
 INT         : [0-9]+;
 FLOAT       : [0-9]*'.'[0-9]*;
 NEWLINE     : '\n';
