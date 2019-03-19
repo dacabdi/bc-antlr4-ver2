@@ -10,13 +10,13 @@ public class App
         ANTLRInputStream input = new ANTLRInputStream(System.in);
 
         // create a lexer that feeds off of input CharStream
-        ArrayInitLexer lexer = new ArrayInitLexer(input);
+        bcLexer lexer = new bcLexer(input);
 
         // create a buffer of tokens pulled from the lexer
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 
         // create a parser that feeds off the tokens buffer
-        ArrayInitParser parser = new ArrayInitParser(tokens);
+        bcParser parser = new bcParser(tokens);
         ParseTree tree = parser.init(); // begin parsing at init rule
         
         System.out.println(tree.toStringTree(parser)); // print LISP-style tree

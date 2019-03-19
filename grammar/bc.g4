@@ -23,17 +23,22 @@ statement : 'quit'
           | 'continue'
           | 'halt'
           | 'return'
-          | 'return' '('? expr ')'? // extension does not require parenthesis
+          | 'return' ('(' expr ')' | expr) // extension ver does not require parenthesis
+          | 'define' NAME '(' names_list? ')' '{' auto_list? statement_list '}'
           | /* empty */
           ;
 
-statement_list : curr=statement (STATEMENT_DELIM next=statement_list)
-               | curr=statement
+names_list : curr=NAME (LISTSEPARATOR next=names_list)?
+            | /* empty */
+            ;
+
+auto_list : 'auto' names_list;
+
+statement_list : curr=statement (STATEMENT_DELIM next=statement_list)?
                | /* empty */
                ;
 
-list : curr=list_item (LISTSEPARATOR next=list)
-     | curr=list_item
+list : curr=list_item (LISTSEPARATOR next=list)?
      | /* empty */
      ;
 
