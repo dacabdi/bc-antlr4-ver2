@@ -5,3 +5,4 @@ build/
 .antlr/
 src/antlr/
 .vscode/
+temp/
