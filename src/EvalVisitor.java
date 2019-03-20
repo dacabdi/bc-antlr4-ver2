@@ -13,14 +13,20 @@ import bc.bcBaseVisitor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 public class EvalVisitor extends bcBaseVisitor<BigDecimal>
 {
     public HashMap<String, BigDecimal> globals = new HashMap<String, BigDecimal>();
+    public Stack<HashMap<String, BigDecimal>> context = new Stack<HashMap<String, BigDecimal>>();
+    public HashMap<String, bcParser.DefineStatContext> functions = new HashMap<String, bcParser.DefineStatContext>();
+
     public bcParser parser;
 
     private final BigDecimal zero = new BigDecimal("0");
     private final BigDecimal one  = new BigDecimal("1");
+
+    private final MathContext mathContext = new MathContext(100); // arbitrary value!
 
     public EvalVisitor(bcParser parser)
     {
@@ -180,7 +186,63 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     @Override
     public BigDecimal visitFunctionCallExpr(bcParser.FunctionCallExprContext ctx)
     {
+        BigDecimal returnVal = null;
+
+        System.out.println("The token is: " + ctx.funct.getText());
+        System.out.println("The token type is: " + ctx.funct.getType());
+        System.out.println("bcParser.SQRT : " + bcParser.SQRT);
+
+        switch(ctx.funct.getType())
+        {
+            case bcParser.SQRT : System.out.println("Matched sqrt"); returnVal = BigDecimalMath.sqrt(this.visit(ctx.arg), mathContext); break;
+            case bcParser.SINE : System.out.println("Matched sine");returnVal = BigDecimalMath.sin (this.visit(ctx.arg), mathContext); break;
+            case bcParser.COSI : System.out.println("Matched cosine");returnVal = BigDecimalMath.cos (this.visit(ctx.arg), mathContext); break;
+            case bcParser.NLOG : System.out.println("Matched nlog");returnVal = BigDecimalMath.log (this.visit(ctx.arg), mathContext); break;
+            case bcParser.EXPE : System.out.println("Matched expe");returnVal = BigDecimalMath.exp (this.visit(ctx.arg), mathContext); break;
+            // TODO case "read"
+            case bcParser.NAME : // defined function
+
+                // get the function
+                String functionName = ctx.funct.getText();
+                bcParser.DefineStatContext fCtx = functions.get(functionName);
+                
+                // check if function is defined
+                //if(fCxt == null) throw new RuntimeException("Function " + functionName + " not defined.");
+
+                // create function context scope
+                HashMap<String, BigDecimal> currentContext = new HashMap<String, BigDecimal>();
+                
+                // parameters
+                List<String> params = Arrays.asList(fCtx.params.getText().split(","));
+                System.out.println(ctx.args.getText());
+
+                /*for (int i = 0; i < params.length; ++i)
+                {
+                    
+                }
+                List<String> autoVars = Arrays.asList(fCtx.autoList.split(","));*/
+                
+                returnVal = zero;
+                
+            break;
+        }
+
+        System.out.println(returnVal);
+
+        return returnVal;
+    }
+
+    //DEFINE NAME LEFTPAR names_list? RIGHTPAR BRACELEFT auto_list? statement_list BRACERIGHT # defineStat
+    @Override
+    public BigDecimal visitDefineStat(bcParser.DefineStatContext ctx)
+    {
+        System.out.println("function name : " + ctx.name.getText());
+        System.out.println("params : " + ctx.params.getText());
+        System.out.println("autolist : " + ctx.autoList.getText());
+        System.out.println("body : " + ctx.body.getText());
         
-        return zero;//return retrieveGlobal(ctx.varid.getText());
+        functions.put(ctx.name.getText(), ctx);
+
+        return zero;
     }
 }

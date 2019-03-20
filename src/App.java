@@ -19,7 +19,7 @@ public class App
 
         // create a parser that feeds off the tokens buffer
         bcParser parser = new bcParser(tokens);
-        ParseTree tree = parser.expr(); // begin parsing at init rule
+        ParseTree tree = parser.program(); // begin parsing at init rule
 
         // visit and evaluate
         EvalVisitor visitor = new EvalVisitor(parser);
