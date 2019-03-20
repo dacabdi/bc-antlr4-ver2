@@ -9,11 +9,23 @@
     <property name="lib" location="lib"/>
     <property name="grammar" location="grammar/bc.g4"/>
     <property name="antlrsource" value="https://www.antlr.org/download/antlr-4.7.2-complete.jar"/>
+    <property name="bigmathlib" value="https://github.com/eobermuhlner/big-math/releases/download/v2.0.1/big-math-2.0.1.jar"/>
     <property name="package" value="bc"/>
 
+    <target name="init">
+        <tstamp/>
+        <mkdir dir="${build}"/>
+    </target>
+
+    <target name="getlibs">
+        <mkdir dir="${lib}" />
+        <get dest="${lib}" src="${antlrsource}" />
+        <get dest="${lib}" src="${bigmathlib}" />
+    </target>
+
     <path id="build.classpath">
-        <fileset dir="${basedir}">
-            <include name="lib/*.jar"/>
+        <fileset dir="${basedir}/lib">
+            <include name="*.jar"/>
         </fileset>
     </path>
     
@@ -27,21 +39,9 @@
         </mapper>
     </pathconvert>
 
-
-    <target name="init">
-        <tstamp/>
-        <mkdir dir="${build}"/>
-    </target>
-
-    <target name="getantlr">
-        <mkdir dir="${lib}" />
-        <get dest="${lib}" src="${antlrsource}" />
-    </target>
-
-    <target name="antlr" depends="init,getantlr">
+    <target name="antlr" depends="init,getlibs">
         <mkdir dir="${src}/antlr"/>
-        <echo message="classpath = ${manifest.classpath}" />
-        <java classname="org.antlr.v4.Tool" classpath="${manifest.classpath}">
+        <java classname="org.antlr.v4.Tool" classpath="${toString:build.classpath}">
             <arg value="${grammar}"/>
             <arg line="-visitor"/>
             <arg line="-o ${src}/antlr"/>
@@ -52,8 +52,9 @@
 
     <target name="compile" depends="init,antlr" description="compile the source">
         <!-- compile the java code from ${src} into ${build} -->
-        <javac srcdir="${src}" destdir="${build}"/>
-        <javac srcdir="${src}/antlr" destdir="${build}"/>
+        <echo message="${toString:build.classpath}"/>
+        <javac srcdir="${src}" destdir="${build}" classpath="${toString:build.classpath}"/>
+        <javac srcdir="${src}/antlr" destdir="${build}" classpath="${toString:build.classpath}"/>
     </target>
 
     <target name="dist" depends="compile" description="generate the distribution">

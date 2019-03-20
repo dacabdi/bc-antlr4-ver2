@@ -43,31 +43,30 @@ list_item : item=expr
           | STRING
           ;
 
-expr : LEFTPAR expr RIGHTPAR
-     | INCDEC varid=NAME
-     | varid=NAME op=INCDEC
-     | op=NEGATE a=expr
-     | <assoc=right>a=expr op=POW b=expr
-     | a=expr op=MULTIPLICATIVE b=expr
-     | a=expr op=ADDITIVE b=expr
-     | <assoc=right>varid=NAME op=PASSIGN b=expr
-     | <assoc=right>varid=NAME op=ASSIGNMENT b=expr
-     | a=expr op=RELATIONAL b=expr
-     | op=NOT a=expr
-     | a=expr op=AND b=expr
-     | a=expr op=OR b=expr
-     | number
-     | varid=NAME
+expr : LEFTPAR expr RIGHTPAR                                # parenthesizedExpr
+     | op=(INC | DEC) varid=NAME                            # incdecExpr
+     | varid=NAME op=(INC | DEC)                            # incdecExpr
+     | op=MIN a=expr                                        # unaryOpExpr
+     | <assoc=right>a=expr op=POW b=expr                    # infixExpr
+     | a=expr op=(MULT | DIV | MOD) b=expr                  # infixExpr
+     | a=expr op=(ADD | MIN) b=expr                         # infixExpr
+     | <assoc=right>varid=NAME op=PASSIGN b=expr            # pAssignExpr
+     | <assoc=right>varid=NAME op=ASSIGNMENT b=expr         # assignExpr
+     | a=expr op=(LT | GT | LTEQ | GTEQ | EQ | NEQ) b=expr  # infixExpr
+     | op=NOT a=expr                                        # unaryOpExpr
+     | a=expr op=AND b=expr                                 # infixExpr
+     | a=expr op=OR b=expr                                  # infixExpr
+     | value=number                                         # valueExpr
+     | varid=NAME                                           # nameExpr
      // functions
-     | funct=FUNCT  arg=expr RIGHTPAR
-     | funct=NAME LEFTPAR arg=expr RIGHTPAR
-     | READ LEFTPAR RIGHTPAR
+     | funct=FUNCT LEFTPAR arg=expr RIGHTPAR                # functionCallExpr
+     | funct=NAME LEFTPAR arg=expr RIGHTPAR                 # functionCallExpr
+     | READ LEFTPAR RIGHTPAR                                # functionCallExpr
      ;
 
 number : INT
        | FLOAT
        ;
-
 
 IF : 'if';
 ELSE : 'else';
@@ -109,17 +108,36 @@ WS          : [ \t\r]+ -> skip;
 
 // OPERATORS--------------------------------------------------------------
 
-INCDEC          :   ('++'|'--')                             ;
-MULTIPLICATIVE  :   ('*'|'/'|'%')                           ;
-NEGATE          :   '-'                                     ;
-ADDITIVE        :   ('+'|NEGATE)                            ;
-POW             :   '^'                                     ;
-RELATIONAL      :   ('<'|'>'|'=='|'<='|'>='|'!=')           ;
-AND             :   '&&'                                    ;
-OR              :   '||'                                    ;
-NOT             :   '!'                                     ;
-PASSIGN         :   (MULTIPLICATIVE'='|ADDITIVE'='|POW'=')  ;
-ASSIGNMENT      :   '='                                     ;
+// MULTIPLICATIVE
+MULT : '*';
+DIV  : '/';
+MOD  : '%';
+MIN  : '-';
+ADD  : '+';
+POW  : '^';
+
+// INCDEC
+INC : '++';
+DEC : '--';
+
+// RELATION
+LT      : '<';
+GT      : '>';
+LTEQ    : '<=';
+GTEQ    : '>=';
+EQ      : '==';
+NEQ     : '!=';
+
+
+
+// LOGICAL
+AND         : '&&';
+OR          : '||';
+NOT         : '!';
+
+// ASSIGN
+PASSIGN     : ((MULT | DIV | MOD)'='|(ADD | MIN)'='|POW'=');
+ASSIGNMENT  : '=';
 
 // rules
 STRING  : STRINGDELIMITER .*? STRINGDELIMITER;

@@ -19,8 +19,12 @@ public class App
 
         // create a parser that feeds off the tokens buffer
         bcParser parser = new bcParser(tokens);
-        ParseTree tree = parser.program(); // begin parsing at init rule
-        
-        System.out.println(tree.toStringTree(parser)); // print LISP-style tree
+        ParseTree tree = parser.expr(); // begin parsing at init rule
+
+        // visit and evaluate
+        EvalVisitor visitor = new EvalVisitor(parser);
+        visitor.visit(tree);
+
+        //System.out.println(tree.toStringTree(parser)); // print LISP-style tree
     }
 }
