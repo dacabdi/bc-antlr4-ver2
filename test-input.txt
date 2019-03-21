@@ -1,13 +1,1 @@
-define functreturn(arg1) {
-    arg1+=1
-    return arg1+1
-}
-
-define functempty(arg1) {
-    arg1+=1
-}
-
-quit
-
-functreturn(5)
-functempty(5)
+25+(10+10)

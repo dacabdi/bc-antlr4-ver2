@@ -1,0 +1,16 @@
+define fibo(level) {
+    if (level==0) {
+        return 0
+    } else {
+        if (level==1) {
+            return 1
+        } else {
+            return (fibo(level-1) + fibo(level-2))
+        }
+    }
+}
+
+for (i=0; i < 25; i++)
+{
+    print "fibonacci of ", i, " is ", fibo(i), "\n"
+}

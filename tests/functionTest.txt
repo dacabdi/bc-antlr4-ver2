@@ -1,0 +1,24 @@
+/*FUNCTION*/
+
+define func(p1, p2) {
+    
+    if(p1 > p2) 
+        z1 = p1 - p2
+    else 
+        z1 = p2 - p1
+    return z1
+}
+
+func(10,40);
+func(10,5)
+
+define func_test(param1, param2) {
+    auto auto1, auto2
+    auto1=10
+    auto2=20;
+    a=param1 + auto1
+    b=param2 + auto2
+    return b-a
+}
+
+func_test(2,4)

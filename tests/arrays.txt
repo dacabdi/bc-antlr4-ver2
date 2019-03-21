@@ -1,0 +1,18 @@
+arr[1] = 1
+arr[2] = 2
+i = 5
+arr[i] = 25
+
+
+print arr[1], " ", arr[2], " ", arr[5], "\n"
+
+
+for(i=0; i < 10; ++i)
+{
+    arr[i]=i*10
+}
+
+for(i=0; i < 10; ++i)
+{
+    print "arr[",i,"]=",arr[i],"\n"    
+}

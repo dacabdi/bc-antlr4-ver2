@@ -4,16 +4,16 @@ import java.lang.*;
 import java.util.*;
 import java.math.*;
 import ch.obermuhlner.math.big.*;
-
+import org.apache.commons.lang3.*;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.*;
-
-import bc.bcBaseVisitor;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+
+import bc.bcBaseVisitor;
+import bc.bcParser.VarnameContext;
 
 public class EvalVisitor extends bcBaseVisitor<BigDecimal>
 {
@@ -154,8 +154,22 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     @Override
     public BigDecimal visitAssignExpr(bcParser.AssignExprContext ctx)
     {
-        String varId = ctx.varid.getText();
+        String varId = null;
+
+        if (ctx.varid instanceof bcParser.ArrayExprContext)
+        {
+            String name = ((bcParser.ArrayExprContext)ctx.varid).name.getText();
+            String index = BigDecimalMath.integralPart(this.visit(((bcParser.ArrayExprContext)ctx.varid).index)).toString();
+            varId = name + "[" + index + "]";
+        }
+        else
+        {
+            varId = ctx.varid.getText();
+        }
+
         BigDecimal value = this.visit(ctx.b);
+
+        //System.out.println("var assigment:" + varId);
 
         setVariable(varId, value);
 
@@ -165,8 +179,20 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     @Override
     public BigDecimal visitPAssignExpr(bcParser.PAssignExprContext ctx)
     {
+        String varId = null;
+
+        if (ctx.varid instanceof bcParser.ArrayExprContext)
+        {
+            String name = ((bcParser.ArrayExprContext)ctx.varid).name.getText();
+            String index = BigDecimalMath.integralPart(this.visit(((bcParser.ArrayExprContext)ctx.varid).index)).toString();
+            varId = name + "[" + index + "]";
+        }
+        else
+        {
+            varId = ctx.varid.getText();
+        }
+
         BigDecimal operand = this.visit(ctx.b);
-        String varId = ctx.varid.getText();
         char prefix = ctx.op.getText().charAt(0);
         int tokenType = parser.getTokenType("'" + prefix + "'");
 
@@ -185,7 +211,7 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     @Override
     public BigDecimal visitNameExpr(bcParser.NameExprContext ctx)
     {
-        return retrieveVariable(ctx.varid.getText());
+        return retrieveVariable(ctx.name.getText());
     }
 
     @Override
@@ -284,7 +310,8 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     {
         while(one.equals(this.visit(ctx.condition)))
         {
-            this.visit(ctx.body);
+            if (ctx.body != null)
+                this.visit(ctx.body);
         }
 
         return null;
@@ -293,11 +320,16 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     @Override
     public BigDecimal visitForStat(bcParser.ForStatContext ctx)
     {
-        this.visit(ctx.init);
+        if(ctx.init != null)
+            this.visit(ctx.init);
+        
         while(one.equals(this.visit(ctx.condition)))
         {
-            this.visit(ctx.body);
-            this.visit(ctx.maintenance);
+            if (ctx.body != null)
+                this.visit(ctx.body);
+            
+            if (ctx.maintenance != null)
+                this.visit(ctx.maintenance);
         }
 
         return null;
@@ -324,10 +356,15 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
         // evaluate arguments
         for (bcParser.List_itemContext item : ctx.list_item()) 
         {
+            
             if( item.expr() != null )
-                System.out.print(this.visit(item));
+                System.out.print(StringEscapeUtils.unescapeJava(this.visit(item).toString()));
             else
-                System.out.print(item.getText());
+            {
+                String str = item.getText().toString();
+                str = str.substring(1, str.length() - 1);
+                System.out.print(StringEscapeUtils.unescapeJava(str));
+            }
         }
             
         return null;
@@ -342,5 +379,95 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
             System.out.println(returnVal);
 
         return returnVal;
+    }
+
+    @Override
+    public BigDecimal visitPreIncdecExpr(bcParser.PreIncdecExprContext ctx)
+    {
+        String varId = null;
+
+        if (ctx.varid instanceof bcParser.ArrayExprContext)
+        {
+            String name = ((bcParser.ArrayExprContext)ctx.varid).name.getText();
+            String index = BigDecimalMath.integralPart(this.visit(((bcParser.ArrayExprContext)ctx.varid).index)).toString();
+            varId = name + "[" + index + "]";
+        }
+        else
+        {
+            varId = ctx.varid.getText();
+        }
+
+        switch(ctx.op.getType())
+        {
+            case bcParser.INC:
+
+                setVariable(varId, retrieveVariable(varId).add(one));
+
+            break;
+
+            case bcParser.DEC:
+
+                setVariable(varId, retrieveVariable(varId).add(one.negate()));
+
+            break;
+        }
+
+        
+        return retrieveVariable(varId);
+    }
+
+    @Override
+    public BigDecimal visitPostIncdecExpr(bcParser.PostIncdecExprContext ctx)
+    {
+        String varId = null;
+
+        if (ctx.varid instanceof bcParser.ArrayExprContext)
+        {
+            String name = ((bcParser.ArrayExprContext)ctx.varid).name.getText();
+            String index = BigDecimalMath.integralPart(this.visit(((bcParser.ArrayExprContext)ctx.varid).index)).toString();
+            varId = name + "[" + index + "]";
+        }
+        else
+        {
+            varId = ctx.varid.getText();
+        }
+
+        BigDecimal oldValue = retrieveVariable(varId);
+
+        switch(ctx.op.getType())
+        {
+            case bcParser.INC:
+
+                setVariable(varId, oldValue.add(one));
+
+            break;
+
+            case bcParser.DEC:
+
+                setVariable(varId, oldValue.add(one.negate()));
+
+            break;
+        }
+
+        return oldValue;
+    }
+
+    @Override
+    public BigDecimal visitArrayExpr(bcParser.ArrayExprContext ctx)
+    {
+        String name = ctx.name.getText();
+        BigDecimal index = this.visit(ctx.index);
+        String stringIndex = name + "[" + BigDecimalMath.integralPart(index).toString() + "]";
+
+        //System.out.println(stringIndex);
+        //System.out.println(Arrays.asList(globals)); // method 1
+
+        return retrieveVariable(name + "[" + BigDecimalMath.integralPart(index).toString() + "]");
+    }
+
+    @Override
+    public BigDecimal visitParenthesizedExpr(bcParser.ParenthesizedExprContext ctx)
+    {
+        return this.visit(ctx.value);
     }
 }

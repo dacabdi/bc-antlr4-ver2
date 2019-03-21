@@ -14,7 +14,7 @@ statement : QUIT                                                                
           | PRINT list_item (LISTSEPARATOR list_item)*                                                                          # printStat
           | IF LEFTPAR condition=expr RIGHTPAR STATEMENT_DELIM* if_block=statement STATEMENT_DELIM* (ELSE STATEMENT_DELIM* else_block=statement)?   # ifElseStat
           | WHILE LEFTPAR condition=expr RIGHTPAR STATEMENT_DELIM* body=statement                                                                   # whileStat
-          | FOR LEFTPAR init=expr SEMICOLON condition=expr SEMICOLON maintenance=expr RIGHTPAR STATEMENT_DELIM* body=statement                      # forStat
+          | FOR LEFTPAR init=expr STATEMENT_DELIM condition=expr STATEMENT_DELIM maintenance=expr RIGHTPAR STATEMENT_DELIM* body=statement                      # forStat
           //| BREAK                                                                                                             # breakStat
           //| CONTINUE                                                                                                          # continueStat
           //| HALT                                                                                                              # haltStat
@@ -35,26 +35,30 @@ list_item : expr
           | STRING
           ;
 
-expr : LEFTPAR expr RIGHTPAR                                                    # parenthesizedExpr
-     | op=(INC | DEC) varid=NAME                                                # incdecExpr
-     | varid=NAME op=(INC | DEC)                                                # incdecExpr
+expr : LEFTPAR value=expr RIGHTPAR                                                    # parenthesizedExpr
+     | op=(INC | DEC) varid=varname                                             # preIncdecExpr
+     | varid=varname op=(INC | DEC)                                             # postIncdecExpr
      | op=MIN a=expr                                                            # unaryOpExpr
      | <assoc=right>a=expr op=POW b=expr                                        # infixExpr
      | a=expr op=(MULT | DIV | MOD) b=expr                                      # infixExpr
      | a=expr op=(ADD | MIN) b=expr                                             # infixExpr
-     | <assoc=right>varid=NAME op=PASSIGN b=expr                                # pAssignExpr
-     | <assoc=right>varid=NAME op=ASSIGNMENT b=expr                             # assignExpr
+     | <assoc=right>varid=varname op=PASSIGN b=expr                             # pAssignExpr
+     | <assoc=right>varid=varname op=ASSIGNMENT b=expr                          # assignExpr
      | a=expr op=(LT | GT | LTEQ | GTEQ | EQ | NEQ) b=expr                      # infixExpr
      | op=NOT a=expr                                                            # unaryOpExpr
      | a=expr op=AND b=expr                                                     # infixExpr
      | a=expr op=OR b=expr                                                      # infixExpr
      | value=number                                                             # valueExpr
-     | varid=NAME                                                               # nameExpr
+     | varname                                                                  # varnameExpr
      // functions
      | funct=NAME LEFTPAR (expr (LISTSEPARATOR expr)*)?  RIGHTPAR               # functionCallExpr
      | funct=(SQRT | SINE | COSI | NLOG | EXPE) LEFTPAR arg=expr RIGHTPAR       # functionCallExpr 
      | funct=READ LEFTPAR RIGHTPAR                                              # functionCallExpr
      ;
+
+varname : name=NAME                                                            # nameExpr
+        | name=NAME SQBRACKLEFT index=expr SQBRACKRIGHT                        # arrayExpr
+        ;
 
 number : INT
        | FLOAT
@@ -62,9 +66,9 @@ number : INT
 
 // NAME begins with a letter followed by any number of letters, digits and underscores, all lowercase.
 
-SEMICOLON : ';';
 LISTSEPARATOR   : ',';
 STATEMENT_DELIM : (SEMICOLON | '\n' );
+SEMICOLON : ';';
 
 IF : 'if';
 ELSE : 'else';
@@ -72,6 +76,8 @@ LEFTPAR : '(';
 RIGHTPAR : ')';
 BRACELEFT : '{';
 BRACERIGHT : '}';
+SQBRACKLEFT : '[';
+SQBRACKRIGHT : ']';
 PRINT : 'print';
 QUIT : 'quit';
 WHILE : 'while';
@@ -91,7 +97,8 @@ COSI    : 'c';
 NLOG    : 'l';
 EXPE    : 'e';
 
-NAME        : (([a-z]+[_a-z0-9]*('['[0-9]+']'))|([a-z]+[_a-z0-9]*));
+NAME        : [a-z]+[a-z0-9_]*;
+//NAME        : (([a-z]+[_a-z0-9]*('['[0-9]+']'))|([a-z]+[_a-z0-9]*));
 INT         : [0-9]+;
 FLOAT       : [0-9]*'.'[0-9]*;
 NEWLINE     : '\n';

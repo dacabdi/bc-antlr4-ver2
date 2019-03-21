@@ -1,0 +1,14 @@
+/* LOOP TESTS */
+
+x = 0
+
+while (x < 10) 
+{
+    x++
+    print x, "\n"
+}
+
+for (i=10; i > 0; i--) 
+{
+    print i, "\n";
+}

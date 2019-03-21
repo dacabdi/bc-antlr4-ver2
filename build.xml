@@ -10,6 +10,7 @@
     <property name="grammar" location="grammar/bc.g4"/>
     <property name="antlrsource" value="https://www.antlr.org/download/antlr-4.7.2-complete.jar"/>
     <property name="bigmathlib" value="https://github.com/eobermuhlner/big-math/releases/download/v2.0.1/big-math-2.0.1.jar"/>
+    <property name="unescapelib" value="http://central.maven.org/maven2/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1.jar"/>
     <property name="package" value="bc"/>
 
     <target name="init">
@@ -21,6 +22,7 @@
         <mkdir dir="${lib}" />
         <get dest="${lib}" src="${antlrsource}" />
         <get dest="${lib}" src="${bigmathlib}" />
+        <get dest="${lib}" src="${unescapelib}" />
     </target>
 
     <path id="build.classpath">
