@@ -1,0 +1,66 @@
+a1=10
+a2=20
+
+{
+    1+2
+    3+4
+    print 4+5
+}
+
+print a1
+print a2
+
+define func(param1, param2) {
+    auto auto1, auto2
+    auto1=10
+    auto2=20
+    a1=param1 + auto1
+    a2=param2 + auto2
+    param1 = 100
+    param2 = 115
+    print param1
+    print param2
+    print auto1
+    print auto2
+    print a1
+    print a2
+}
+
+func(15, 25)
+
+print param1
+print param2
+print auto1
+print auto2
+print a1
+print a2
+
+print 1+1,"this is a string",a1+a2
+
+
+while (a < 10)
+{
+    a+=1
+    print a
+}
+
+for (a=0; a<10; a+=1)
+{
+    print a
+    b+=a
+}
+
+
+a = 2
+
+if ( a == 1 ) {
+    b = 10
+    d = 15
+}
+else
+{
+    b = 20
+    d = 25
+}
+
+print b, d

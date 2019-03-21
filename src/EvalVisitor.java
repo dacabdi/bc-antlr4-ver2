@@ -18,7 +18,7 @@ import java.util.Stack;
 public class EvalVisitor extends bcBaseVisitor<BigDecimal>
 {
     public HashMap<String, BigDecimal> globals = new HashMap<String, BigDecimal>();
-    public Stack<HashMap<String, BigDecimal>> context = new Stack<HashMap<String, BigDecimal>>();
+    public Stack<HashMap<String, BigDecimal>> contexts = new Stack<HashMap<String, BigDecimal>>();
     public HashMap<String, bcParser.DefineStatContext> functions = new HashMap<String, bcParser.DefineStatContext>();
 
     public bcParser parser;
@@ -27,6 +27,8 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     private final BigDecimal one  = new BigDecimal("1");
 
     private final MathContext mathContext = new MathContext(100); // arbitrary value!
+
+    private BigDecimal functionReturnValue = zero;
 
     public EvalVisitor(bcParser parser)
     {
@@ -100,17 +102,23 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
         return returnVal;
     }
 
-    public BigDecimal retrieveGlobal(String varId)
+    public BigDecimal retrieveVariable(String varId)
     {
+        if(!contexts.isEmpty() && contexts.peek().get(varId) != null)
+            return contexts.peek().get(varId);
+
         if( globals.get(varId) == null )
             globals.put(varId, new BigDecimal(0.0));
-        
+
         return globals.get(varId);
     }
 
-    public void setGlobal(String varId, BigDecimal value)
+    public void setVariable(String varId, BigDecimal value)
     {
-        globals.put(varId, value);
+        if(!contexts.isEmpty() && contexts.peek().get(varId) != null)
+            contexts.peek().put(varId, value);
+        else
+            globals.put(varId, value);
     }
 
     @Override 
@@ -149,12 +157,9 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
         String varId = ctx.varid.getText();
         BigDecimal value = this.visit(ctx.b);
 
-        if( globals.get(varId) == null )
-            globals.put(varId, new BigDecimal(0.0));
+        setVariable(varId, value);
 
-        globals.put(varId, value);
-
-        return globals.get(varId);
+        return null;
     }
 
     @Override
@@ -165,22 +170,22 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
         char prefix = ctx.op.getText().charAt(0);
         int tokenType = parser.getTokenType("'" + prefix + "'");
 
-        BigDecimal newValue = infixOperation(retrieveGlobal(varId), operand, tokenType);
-        setGlobal(varId, newValue);
+        BigDecimal newValue = infixOperation(retrieveVariable(varId), operand, tokenType);
+        setVariable(varId, newValue);
 
-        return newValue;
+        return null;
     }
 
     @Override
     public BigDecimal visitNumber(bcParser.NumberContext ctx) 
-    { 
+    {
         return new BigDecimal(ctx.getText());
     }
 
     @Override
     public BigDecimal visitNameExpr(bcParser.NameExprContext ctx)
     {
-        return retrieveGlobal(ctx.varid.getText());
+        return retrieveVariable(ctx.varid.getText());
     }
 
     @Override
@@ -188,17 +193,13 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
     {
         BigDecimal returnVal = null;
 
-        System.out.println("The token is: " + ctx.funct.getText());
-        System.out.println("The token type is: " + ctx.funct.getType());
-        System.out.println("bcParser.SQRT : " + bcParser.SQRT);
-
         switch(ctx.funct.getType())
         {
-            case bcParser.SQRT : System.out.println("Matched sqrt"); returnVal = BigDecimalMath.sqrt(this.visit(ctx.arg), mathContext); break;
-            case bcParser.SINE : System.out.println("Matched sine");returnVal = BigDecimalMath.sin (this.visit(ctx.arg), mathContext); break;
-            case bcParser.COSI : System.out.println("Matched cosine");returnVal = BigDecimalMath.cos (this.visit(ctx.arg), mathContext); break;
-            case bcParser.NLOG : System.out.println("Matched nlog");returnVal = BigDecimalMath.log (this.visit(ctx.arg), mathContext); break;
-            case bcParser.EXPE : System.out.println("Matched expe");returnVal = BigDecimalMath.exp (this.visit(ctx.arg), mathContext); break;
+            case bcParser.SQRT : returnVal = BigDecimalMath.sqrt(this.visit(ctx.arg), mathContext); break;
+            case bcParser.SINE : returnVal = BigDecimalMath.sin (this.visit(ctx.arg), mathContext); break;
+            case bcParser.COSI : returnVal = BigDecimalMath.cos (this.visit(ctx.arg), mathContext); break;
+            case bcParser.NLOG : returnVal = BigDecimalMath.log (this.visit(ctx.arg), mathContext); break;
+            case bcParser.EXPE : returnVal = BigDecimalMath.exp (this.visit(ctx.arg), mathContext); break;
             // TODO case "read"
             case bcParser.NAME : // defined function
 
@@ -207,42 +208,139 @@ public class EvalVisitor extends bcBaseVisitor<BigDecimal>
                 bcParser.DefineStatContext fCtx = functions.get(functionName);
                 
                 // check if function is defined
-                //if(fCxt == null) throw new RuntimeException("Function " + functionName + " not defined.");
+                if(fCtx == null) 
+                    throw new RuntimeException("Function " + functionName + " not defined.");
 
                 // create function context scope
                 HashMap<String, BigDecimal> currentContext = new HashMap<String, BigDecimal>();
                 
                 // parameters
                 List<String> params = Arrays.asList(fCtx.params.getText().split(","));
-                System.out.println(ctx.args.getText());
+                List<BigDecimal> arguments = new ArrayList<BigDecimal>();
 
-                /*for (int i = 0; i < params.length; ++i)
+                // evaluate arguments
+                for (bcParser.ExprContext expr : ctx.expr())
+                    arguments.add(this.visit(expr));
+
+                // check number of parameters vs arguments
+                if(params.size() != arguments.size())
+                    throw new RuntimeException("Parameter number mismatch");
+
+                // put arguments in context
+                for (int i = 0; i < params.size(); ++i)
+                    currentContext.put(params.get(i), arguments.get(i));
+
+                // get local variables
+                if(fCtx.autoList != null)
                 {
-                    
+                    List<String> autoVars = Arrays.asList(fCtx.autoList.getText().split(","));
+
+                    for (String var : autoVars)
+                        currentContext.put(var, new BigDecimal("0"));
                 }
-                List<String> autoVars = Arrays.asList(fCtx.autoList.split(","));*/
+
+                // activate context
+                contexts.push(currentContext);
                 
-                returnVal = zero;
+                // reset return value
+                functionReturnValue = zero;
+
+                // call function
+                this.visit(fCtx.body);
+
+                returnVal = functionReturnValue;
+
+                // eliminate context
+                contexts.pop();
                 
             break;
         }
 
-        System.out.println(returnVal);
-
         return returnVal;
     }
 
-    //DEFINE NAME LEFTPAR names_list? RIGHTPAR BRACELEFT auto_list? statement_list BRACERIGHT # defineStat
     @Override
     public BigDecimal visitDefineStat(bcParser.DefineStatContext ctx)
     {
-        System.out.println("function name : " + ctx.name.getText());
-        System.out.println("params : " + ctx.params.getText());
-        System.out.println("autolist : " + ctx.autoList.getText());
-        System.out.println("body : " + ctx.body.getText());
-        
         functions.put(ctx.name.getText(), ctx);
 
-        return zero;
+        return null;
+    }
+
+    @Override
+    public BigDecimal visitIfElseStat(bcParser.IfElseStatContext ctx)
+    {
+        BigDecimal conditionResult = this.visit(ctx.condition);
+        if(conditionResult.equals(one))
+            this.visit(ctx.if_block);
+        else if (ctx.else_block != null)
+            this.visit(ctx.else_block);
+
+        return null;
+    }
+
+    @Override
+    public BigDecimal visitWhileStat(bcParser.WhileStatContext ctx)
+    {
+        while(one.equals(this.visit(ctx.condition)))
+        {
+            this.visit(ctx.body);
+        }
+
+        return null;
+    }
+
+    @Override
+    public BigDecimal visitForStat(bcParser.ForStatContext ctx)
+    {
+        this.visit(ctx.init);
+        while(one.equals(this.visit(ctx.condition)))
+        {
+            this.visit(ctx.body);
+            this.visit(ctx.maintenance);
+        }
+
+        return null;
+    }
+
+    @Override
+    public BigDecimal visitReturnStat(bcParser.ReturnStatContext ctx)
+    {
+        functionReturnValue = this.visit(ctx.value);
+        
+        return null;
+    }
+
+    @Override
+    public BigDecimal visitQuitStat(bcParser.QuitStatContext ctx)
+    {
+        System.exit(0);
+        return null;
+    }
+
+    @Override
+    public BigDecimal visitPrintStat(bcParser.PrintStatContext ctx)
+    {
+        // evaluate arguments
+        for (bcParser.List_itemContext item : ctx.list_item()) 
+        {
+            if( item.expr() != null )
+                System.out.print(this.visit(item));
+            else
+                System.out.print(item.getText());
+        }
+            
+        return null;
+    }
+
+    @Override
+    public BigDecimal visitExprStat(bcParser.ExprStatContext ctx)
+    {
+        BigDecimal returnVal = this.visit(ctx.value);
+
+        if(returnVal != null)
+            System.out.println(returnVal);
+
+        return returnVal;
     }
 }

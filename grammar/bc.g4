@@ -8,19 +8,19 @@ program : <EOF>
 
 
 statement : QUIT                                                                                                                # quitStat
-          | expr                                                                                                                # exprStat
+          | value=expr                                                                                                                # exprStat
           | STRING                                                                                                              # stringStat
           | BRACELEFT block BRACERIGHT                                                                                          # statementBlockStat
-          | PRINT list                                                                                                          # printStat
-          | IF LEFTPAR expr RIGHTPAR statement (ELSE statement)?                                                                # ifElseStat
-          | WHILE LEFTPAR expr RIGHTPAR statement                                                                               # whileStat
-          | FOR LEFTPAR expr SEMICOLON expr SEMICOLON expr RIGHTPAR statement                                                   # forStat
-          | BREAK                                                                                                               # breakStat
-          | CONTINUE                                                                                                            # continueStat
-          | HALT                                                                                                                # haltStat
+          | PRINT list_item (LISTSEPARATOR list_item)*                                                                          # printStat
+          | IF LEFTPAR condition=expr RIGHTPAR STATEMENT_DELIM* if_block=statement STATEMENT_DELIM* (ELSE STATEMENT_DELIM* else_block=statement)?   # ifElseStat
+          | WHILE LEFTPAR condition=expr RIGHTPAR STATEMENT_DELIM* body=statement                                                                   # whileStat
+          | FOR LEFTPAR init=expr SEMICOLON condition=expr SEMICOLON maintenance=expr RIGHTPAR STATEMENT_DELIM* body=statement                      # forStat
+          //| BREAK                                                                                                             # breakStat
+          //| CONTINUE                                                                                                          # continueStat
+          //| HALT                                                                                                              # haltStat
           | RETURN                                                                                                              # returnStat
-          | RETURN (( LEFTPAR expr RIGHTPAR ) | expr)                                                                           # returnStat
-          | DEFINE name=NAME LEFTPAR params=names_list? RIGHTPAR BRACELEFT (AUTO autoList=names_list (';' | '\n')*)? body=block BRACERIGHT     # defineStat
+          | RETURN (( LEFTPAR value=expr RIGHTPAR ) | value=expr)                                                                           # returnStat
+          | DEFINE name=NAME LEFTPAR params=names_list? RIGHTPAR STATEMENT_DELIM* BRACELEFT STATEMENT_DELIM* (AUTO autoList=names_list STATEMENT_DELIM+)? body=block BRACERIGHT # defineStat
           //| /* empty */
           ;
 
@@ -31,10 +31,7 @@ block : STATEMENT_DELIM* stat=statement (STATEMENT_DELIM+ stat=statement?)* STAT
 names_list : name=NAME (LISTSEPARATOR name=NAME)*
            ;
 
-list : curr=list_item (LISTSEPARATOR next=list_item)*
-     ;
-
-list_item : item=expr
+list_item : expr 
           | STRING
           ;
 
@@ -54,13 +51,10 @@ expr : LEFTPAR expr RIGHTPAR                                                    
      | value=number                                                             # valueExpr
      | varid=NAME                                                               # nameExpr
      // functions
-     | funct=NAME LEFTPAR args=args_list? RIGHTPAR                              # functionCallExpr
+     | funct=NAME LEFTPAR (expr (LISTSEPARATOR expr)*)?  RIGHTPAR               # functionCallExpr
      | funct=(SQRT | SINE | COSI | NLOG | EXPE) LEFTPAR arg=expr RIGHTPAR       # functionCallExpr 
      | funct=READ LEFTPAR RIGHTPAR                                              # functionCallExpr
      ;
-
-args_list : arg=expr (LISTSEPARATOR arg=expr)*                                  # visitArgumentsList
-          ;
 
 number : INT
        | FLOAT
@@ -68,6 +62,7 @@ number : INT
 
 // NAME begins with a letter followed by any number of letters, digits and underscores, all lowercase.
 
+SEMICOLON : ';';
 LISTSEPARATOR   : ',';
 STATEMENT_DELIM : (SEMICOLON | '\n' );
 
@@ -81,7 +76,7 @@ PRINT : 'print';
 QUIT : 'quit';
 WHILE : 'while';
 FOR : 'for';
-SEMICOLON : ';';
+
 BREAK : 'break';
 CONTINUE : 'continue';
 HALT : 'halt';
